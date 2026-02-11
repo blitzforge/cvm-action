@@ -136,24 +136,30 @@ runs:
           PUBLISH_CMD="$PUBLISH_CMD --dry-run"
         fi
 
-        if [ -n "$CARGO_REGISTRY_TOKEN" ]; then
-          PUBLISH_CMD="$PUBLISH_CMD --token $CARGO_REGISTRY_TOKEN"
-        fi
-
         echo "Running: $PUBLISH_CMD"
 
-        git config --global user.name "GitHub"
-        git config --global user.email "noreply@github.com"
-
         # Run publish and capture output
-        if $PUBLISH_CMD; then
+        OUTPUT=$($PUBLISH_CMD 2>&1)
+        EXIT_CODE=$?
+
+        echo "$OUTPUT"
+
+        if [ $EXIT_CODE -eq 0 ]; then
           echo "published=true" >> $GITHUB_OUTPUT
 
-          # Try to extract version info from Cargo.toml for single crate projects
-          if [ -f "Cargo.toml" ] && ! grep -q "^\[workspace\]" Cargo.toml; then
-            VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
-            if [ -n "$VERSION" ]; then
-              echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Extract JSON output from CVM
+          JSON_OUTPUT=$(echo "$OUTPUT" | grep "::cvm-output-json::" | sed 's/.*::cvm-output-json:://')
+
+          if [ -n "$JSON_OUTPUT" ]; then
+            echo "crates=$JSON_OUTPUT" >> $GITHUB_OUTPUT
+
+            # For single crate projects, extract version from first element
+            CRATE_COUNT=$(echo "$JSON_OUTPUT" | jq 'length')
+            if [ "$CRATE_COUNT" == "1" ]; then
+              VERSION=$(echo "$JSON_OUTPUT" | jq -r '.[0].version')
+              if [ -n "$VERSION" ] && [ "$VERSION" != "null" ]; then
+                echo "version=$VERSION" >> $GITHUB_OUTPUT
+              fi
             fi
           fi
         else
