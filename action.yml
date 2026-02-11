@@ -44,6 +44,9 @@ outputs:
   new-version:
     description: "New version after applying changes (for single crate projects)"
     value: ${{ steps.get-version.outputs.new-version }}
+  current-version:
+    description: "Current version (always available for single crate projects)"
+    value: ${{ steps.get-current-version.outputs.current-version }}
   crates:
     description: "JSON array of published crates with versions"
     value: ${{ steps.publish.outputs.crates }}
@@ -73,6 +76,17 @@ runs:
         else
           echo "CVM already installed"
         fi
+
+    - name: Get current version
+      id: get-current-version
+      shell: bash
+      if: inputs.command != 'publish'
+      run: |
+        # Always get the current version for use in later steps
+        RAW_VERSION=$(cvm info)
+        VERSION=$(echo "$RAW_VERSION" | tr -d '\n' | xargs)
+        echo "current-version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $VERSION"
 
     - name: Check for pending changes
       id: check
