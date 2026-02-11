@@ -1,105 +1,116 @@
-name: 'Composer Version Manager'
-description: 'Manage and install specific Composer versions in your GitHub Actions workflow'
-author: 'BlitzForge'
-
-inputs:
-  composer-version:
-    description: 'The Composer version to install (e.g., "2.7.1", "2", "latest", "snapshot")'
-    required: false
-    default: 'latest'
-  working-directory:
-    description: 'Working directory for Composer installation'
-    required: false
-    default: '.'
-  install-dir:
-    description: 'Directory to install Composer binary'
-    required: false
-    default: '/usr/local/bin'
-
-outputs:
-  composer-version:
-    description: 'The installed Composer version'
-    value: ${{ steps.install.outputs.composer-version }}
-  composer-path:
-    description: 'Path to the Composer executable'
-    value: ${{ steps.install.outputs.composer-path }}
-
-runs:
-  using: 'composite'
-  steps:
-    - name: Install Composer Version
-      id: install
-      shell: bash
-      run: |
-        set -e
-
-        VERSION="${{ inputs.composer-version }}"
-        INSTALL_DIR="${{ inputs.install-dir }}"
-        WORKING_DIR="${{ inputs.working-directory }}"
-
-        echo "Installing Composer version: $VERSION"
-
-        # Create install directory if it doesn't exist
-        sudo mkdir -p "$INSTALL_DIR"
-
-        # Determine download URL based on version
-        if [ "$VERSION" = "latest" ] || [ "$VERSION" = "stable" ]; then
-          DOWNLOAD_URL="https://getcomposer.org/composer-stable.phar"
-        elif [ "$VERSION" = "preview" ]; then
-          DOWNLOAD_URL="https://getcomposer.org/composer-preview.phar"
-        elif [ "$VERSION" = "snapshot" ]; then
-          DOWNLOAD_URL="https://getcomposer.org/composer.phar"
-        elif [ "$VERSION" = "1" ]; then
-          DOWNLOAD_URL="https://getcomposer.org/composer-1.phar"
-        elif [ "$VERSION" = "2" ]; then
-          DOWNLOAD_URL="https://getcomposer.org/composer-2.phar"
-        else
-          # Specific version
-          DOWNLOAD_URL="https://getcomposer.org/download/$VERSION/composer.phar"
-        fi
-
-        echo "Downloading from: $DOWNLOAD_URL"
-
-        # Download Composer
-        TEMP_FILE=$(mktemp)
-        if ! curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_FILE"; then
-          echo "::error::Failed to download Composer from $DOWNLOAD_URL"
-          exit 1
-        fi
-
-        # Verify it's a valid PHP file
-        if ! head -n 1 "$TEMP_FILE" | grep -q "^#!/usr/bin/env php"; then
-          echo "::error::Downloaded file is not a valid Composer phar"
-          rm -f "$TEMP_FILE"
-          exit 1
-        fi
-
-        # Verify the downloaded file has content
-        if [ ! -s "$TEMP_FILE" ]; then
-          echo "::error::Downloaded file is empty"
-          rm -f "$TEMP_FILE"
-          exit 1
-        fi
-
-        # Install Composer
-        sudo mv "$TEMP_FILE" "$INSTALL_DIR/composer"
-        sudo chmod +x "$INSTALL_DIR/composer"
-
-        # Get installed version
-        cd "$WORKING_DIR"
-        COMPOSER_OUTPUT=$(composer --version 2>&1 || echo "")
-        # Extract version using portable sed instead of grep -P
-        INSTALLED_VERSION=$(echo "$COMPOSER_OUTPUT" | sed -n 's/.*Composer version \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p')
-        if [ -z "$INSTALLED_VERSION" ]; then
-          INSTALLED_VERSION="unknown"
-        fi
-
-        echo "composer-version=$INSTALLED_VERSION" >> $GITHUB_OUTPUT
-        echo "composer-path=$INSTALL_DIR/composer" >> $GITHUB_OUTPUT
-
-        echo "✓ Composer $INSTALLED_VERSION installed successfully"
-        composer --version
+name: "CVM - Crate Version Manager"
+description: "Automatically manage Rust crate versions with semantic versioning"
+author: "BlitzForge"
 
 branding:
-  icon: 'package'
-  color: 'blue'
+  icon: "package"
+  color: "orange"
+
+inputs:
+  command:
+    description: "Command to run: status, apply, or check-and-apply"
+    required: false
+    default: "check-and-apply"
+  dry-run:
+    description: "Run in dry-run mode (preview only)"
+    required: false
+    default: "false"
+  create-pr:
+    description: "Create a pull request with version changes"
+    required: false
+    default: "true"
+  pr-title:
+    description: "Title for the pull request"
+    required: false
+    default: "chore: apply version bumps"
+  pr-labels:
+    description: "Comma-separated labels for the PR"
+    required: false
+    default: "version-bump,automated"
+
+outputs:
+  has-changes:
+    description: "Whether there are pending version changes"
+    value: ${{ steps.check.outputs.has-changes }}
+  applied:
+    description: "Whether changes were applied"
+    value: ${{ steps.apply.outputs.applied }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+
+    - name: Cache Cargo
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-cvm
+
+    - name: Install CVM
+      shell: bash
+      run: |
+        if ! command -v cvm &> /dev/null; then
+          echo "Installing CVM..."
+          cargo install cvm_cli
+        else
+          echo "CVM already installed"
+        fi
+
+    - name: Check for pending changes
+      id: check
+      shell: bash
+      continue-on-error: true
+      run: |
+        if cvm status; then
+          echo "has-changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "has-changes=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Dry-run preview
+      if: inputs.dry-run == 'true' && steps.check.outputs.has-changes == 'true'
+      shell: bash
+      run: cvm apply --dry-run
+
+    - name: Apply version changes
+      id: apply
+      if: inputs.dry-run == 'false' && steps.check.outputs.has-changes == 'true'
+      shell: bash
+      run: |
+        cvm apply
+        echo "applied=true" >> $GITHUB_OUTPUT
+
+    - name: Create Pull Request
+      if: steps.apply.outputs.applied == 'true' && inputs.create-pr == 'true'
+      uses: peter-evans/create-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+      with:
+        commit-message: ${{ inputs.pr-title }}
+        title: ${{ inputs.pr-title }}
+        body: |
+          ## 🤖 Automated Version Bump
+
+          This PR was automatically created by CVM.
+
+          ### Changes Applied
+          All pending version changes from `.cvm/changes/` have been applied.
+
+          ### Review
+          - [ ] Version numbers are correct
+          - [ ] All affected crates are updated
+
+          ---
+          *Generated by [CVM Action](https://github.com/blitzforge/cvm-action)*
+        labels: ${{ inputs.pr-labels }}
+        branch: version-bump-${{ github.run_number }}
