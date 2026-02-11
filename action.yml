@@ -41,6 +41,9 @@ outputs:
   version:
     description: "Version that was published (for single crate projects)"
     value: ${{ steps.publish.outputs.version }}
+  new-version:
+    description: "New version after applying changes (for single crate projects)"
+    value: ${{ steps.get-version.outputs.new-version }}
   crates:
     description: "JSON array of published crates with versions"
     value: ${{ steps.publish.outputs.crates }}
@@ -95,6 +98,14 @@ runs:
       run: |
         cvm apply
         echo "applied=true" >> $GITHUB_OUTPUT
+
+    - name: Get new version
+      id: get-version
+      if: steps.apply.outputs.applied == 'true'
+      shell: bash
+      run: |
+        VERSION=$(cvm info)
+        echo "new-version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Create Pull Request
       if: steps.apply.outputs.applied == 'true' && inputs.create-pr == 'true'
