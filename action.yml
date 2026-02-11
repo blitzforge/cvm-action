@@ -32,16 +32,16 @@ runs:
       shell: bash
       run: |
         set -e
-        
+
         VERSION="${{ inputs.composer-version }}"
         INSTALL_DIR="${{ inputs.install-dir }}"
         WORKING_DIR="${{ inputs.working-directory }}"
-        
+
         echo "Installing Composer version: $VERSION"
-        
+
         # Create install directory if it doesn't exist
         sudo mkdir -p "$INSTALL_DIR"
-        
+
         # Determine download URL based on version
         if [ "$VERSION" = "latest" ] || [ "$VERSION" = "stable" ]; then
           DOWNLOAD_URL="https://getcomposer.org/composer-stable.phar"
@@ -57,33 +57,33 @@ runs:
           # Specific version
           DOWNLOAD_URL="https://getcomposer.org/download/$VERSION/composer.phar"
         fi
-        
+
         echo "Downloading from: $DOWNLOAD_URL"
-        
+
         # Download Composer
         TEMP_FILE=$(mktemp)
         if ! curl -sS "$DOWNLOAD_URL" -o "$TEMP_FILE"; then
           echo "::error::Failed to download Composer from $DOWNLOAD_URL"
           exit 1
         fi
-        
+
         # Verify it's a valid PHP file
         if ! head -n 1 "$TEMP_FILE" | grep -q "^#!/usr/bin/env php"; then
           echo "::error::Downloaded file is not a valid Composer phar"
           exit 1
         fi
-        
+
         # Install Composer
         sudo mv "$TEMP_FILE" "$INSTALL_DIR/composer"
         sudo chmod +x "$INSTALL_DIR/composer"
-        
+
         # Get installed version
         cd "$WORKING_DIR"
         INSTALLED_VERSION=$(composer --version 2>&1 | grep -oP 'Composer version \K[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
-        
+
         echo "composer-version=$INSTALLED_VERSION" >> $GITHUB_OUTPUT
         echo "composer-path=$INSTALL_DIR/composer" >> $GITHUB_OUTPUT
-        
+
         echo "✓ Composer $INSTALLED_VERSION installed successfully"
         composer --version
 
