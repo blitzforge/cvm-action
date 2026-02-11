@@ -104,7 +104,11 @@ runs:
       if: steps.apply.outputs.applied == 'true'
       shell: bash
       run: |
-        VERSION=$(cvm info)
+        # Get version and trim all whitespace
+        RAW_VERSION=$(cvm info)
+        echo "Debug - Raw cvm info output: '$RAW_VERSION'"
+        VERSION=$(echo "$RAW_VERSION" | tr -d '\n' | xargs)
+        echo "Debug - Trimmed version: '$VERSION'"
         echo "new-version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Create Pull Request
