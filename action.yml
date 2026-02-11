@@ -1,0 +1,92 @@
+name: 'Composer Version Manager'
+description: 'Manage and install specific Composer versions in your GitHub Actions workflow'
+author: 'BlitzForge'
+
+inputs:
+  composer-version:
+    description: 'The Composer version to install (e.g., "2.7.1", "2", "latest", "snapshot")'
+    required: false
+    default: 'latest'
+  working-directory:
+    description: 'Working directory for Composer installation'
+    required: false
+    default: '.'
+  install-dir:
+    description: 'Directory to install Composer binary'
+    required: false
+    default: '/usr/local/bin'
+
+outputs:
+  composer-version:
+    description: 'The installed Composer version'
+    value: ${{ steps.install.outputs.composer-version }}
+  composer-path:
+    description: 'Path to the Composer executable'
+    value: ${{ steps.install.outputs.composer-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Composer Version
+      id: install
+      shell: bash
+      run: |
+        set -e
+        
+        VERSION="${{ inputs.composer-version }}"
+        INSTALL_DIR="${{ inputs.install-dir }}"
+        WORKING_DIR="${{ inputs.working-directory }}"
+        
+        echo "Installing Composer version: $VERSION"
+        
+        # Create install directory if it doesn't exist
+        sudo mkdir -p "$INSTALL_DIR"
+        
+        # Determine download URL based on version
+        if [ "$VERSION" = "latest" ] || [ "$VERSION" = "stable" ]; then
+          DOWNLOAD_URL="https://getcomposer.org/composer-stable.phar"
+        elif [ "$VERSION" = "preview" ]; then
+          DOWNLOAD_URL="https://getcomposer.org/composer-preview.phar"
+        elif [ "$VERSION" = "snapshot" ]; then
+          DOWNLOAD_URL="https://getcomposer.org/composer.phar"
+        elif [ "$VERSION" = "1" ]; then
+          DOWNLOAD_URL="https://getcomposer.org/composer-1.phar"
+        elif [ "$VERSION" = "2" ]; then
+          DOWNLOAD_URL="https://getcomposer.org/composer-2.phar"
+        else
+          # Specific version
+          DOWNLOAD_URL="https://getcomposer.org/download/$VERSION/composer.phar"
+        fi
+        
+        echo "Downloading from: $DOWNLOAD_URL"
+        
+        # Download Composer
+        TEMP_FILE=$(mktemp)
+        if ! curl -sS "$DOWNLOAD_URL" -o "$TEMP_FILE"; then
+          echo "::error::Failed to download Composer from $DOWNLOAD_URL"
+          exit 1
+        fi
+        
+        # Verify it's a valid PHP file
+        if ! head -n 1 "$TEMP_FILE" | grep -q "^#!/usr/bin/env php"; then
+          echo "::error::Downloaded file is not a valid Composer phar"
+          exit 1
+        fi
+        
+        # Install Composer
+        sudo mv "$TEMP_FILE" "$INSTALL_DIR/composer"
+        sudo chmod +x "$INSTALL_DIR/composer"
+        
+        # Get installed version
+        cd "$WORKING_DIR"
+        INSTALLED_VERSION=$(composer --version 2>&1 | grep -oP 'Composer version \K[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+        
+        echo "composer-version=$INSTALLED_VERSION" >> $GITHUB_OUTPUT
+        echo "composer-path=$INSTALL_DIR/composer" >> $GITHUB_OUTPUT
+        
+        echo "✓ Composer $INSTALLED_VERSION installed successfully"
+        composer --version
+
+branding:
+  icon: 'package'
+  color: 'blue'
