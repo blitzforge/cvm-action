@@ -145,7 +145,7 @@ Publish to crates.io 🚀
 ### Publish Options
 
 ```yaml
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
     dry-run: 'true'                    # Preview only
@@ -157,7 +157,7 @@ Publish to crates.io 🚀
 ### PR Customization
 
 ```yaml
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   with:
     pr-title: 'chore(release): bump versions'
     pr-labels: 'release,automated,semver'
@@ -195,7 +195,7 @@ All workflows expose these outputs that you can use in subsequent steps:
 steps:
   - name: Publish
     id: publish
-    uses: blitzforge/cvm-action@v1
+    uses: lucasaarch/cvm-action@v1
     with:
       command: 'publish'
 
@@ -244,7 +244,7 @@ This ensures publishing only happens when there are NO pending changes.
 
 - [Main README](../../README.md) - Full documentation
 - [Usage Examples](../../EXAMPLE.md) - More examples and patterns
-- [CVM CLI](https://github.com/blitzforge/cvm) - The underlying tool
+- [CVM CLI](https://github.com/lucasaarch/cvm) - The underlying tool
 
 ---
 
@@ -258,4 +258,4 @@ This ensures publishing only happens when there are NO pending changes.
 
 ---
 
-**Questions?** Open an issue at [github.com/blitzforge/cvm-action](https://github.com/blitzforge/cvm-action/issues)
+**Questions?** Open an issue at [github.com/lucasaarch/cvm-action](https://github.com/lucasaarch/cvm-action/issues)

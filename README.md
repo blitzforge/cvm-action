@@ -18,7 +18,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: blitzforge/cvm-action@v1
+      - uses: lucasaarch/cvm-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -61,7 +61,7 @@ jobs:
       
       - name: Check and apply version changes
         id: cvm
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -80,7 +80,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Publish crates
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'publish'
         env:
@@ -142,7 +142,7 @@ The action will:
 Preview changes without applying them:
 
 ```yaml
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   with:
     dry-run: 'true'
     create-pr: 'false'
@@ -155,7 +155,7 @@ Check for pending changes without applying:
 ```yaml
 - name: Check for pending changes
   id: check
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'status'
     create-pr: 'false'
@@ -171,7 +171,7 @@ Publish crates with tags and GitHub releases:
 
 ```yaml
 - name: Publish crates
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
   env:
@@ -183,7 +183,7 @@ Publish crates with tags and GitHub releases:
 
 ```yaml
 # Publish without creating GitHub releases
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
     publish-no-release: 'true'
@@ -192,7 +192,7 @@ Publish crates with tags and GitHub releases:
     CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
 # Publish without creating Git tags (only crates.io)
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
     publish-no-tag: 'true'
@@ -201,7 +201,7 @@ Publish crates with tags and GitHub releases:
     CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
 # Dry-run publish (preview what would be published)
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
     dry-run: 'true'
@@ -213,7 +213,7 @@ Publish crates with tags and GitHub releases:
 ### Custom PR Configuration
 
 ```yaml
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
@@ -226,7 +226,7 @@ Publish crates with tags and GitHub releases:
 Apply changes without creating a PR:
 
 ```yaml
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   with:
     create-pr: 'false'
 ```
@@ -341,7 +341,7 @@ Get your crates.io token from [crates.io/me](https://crates.io/me) and add it to
 
 ## 🤝 Related Projects
 
-- [CVM CLI](https://github.com/blitzforge/cvm) - The core CVM tool
+- [CVM CLI](https://github.com/lucasaarch/cvm) - The core CVM tool
 - [cvm_cli on crates.io](https://crates.io/crates/cvm_cli) - Install with `cargo install cvm_cli`
 
 ## 📄 License
@@ -350,7 +350,7 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🐛 Issues & Contributing
 
-- Report issues: [GitHub Issues](https://github.com/blitzforge/cvm-action/issues)
+- Report issues: [GitHub Issues](https://github.com/lucasaarch/cvm-action/issues)
 - Contributions welcome! Please submit a Pull Request.
 
 ## 💡 Why Use CVM?
@@ -363,4 +363,4 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Made with ❤️ by BlitzForge**
+**Made with ❤️ by lucasaarch**

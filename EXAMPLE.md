@@ -26,7 +26,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: blitzforge/cvm-action@v1
+      - uses: lucasaarch/cvm-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -51,7 +51,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: blitzforge/cvm-action@v1
+      - uses: lucasaarch/cvm-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -77,7 +77,7 @@ jobs:
       
       - name: Check for pending version changes
         id: cvm-check
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'status'
           create-pr: 'false'
@@ -115,7 +115,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Preview changes
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           dry-run: 'true'
           create-pr: 'false'
@@ -145,7 +145,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: check
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'status'
           create-pr: 'false'
@@ -157,7 +157,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: blitzforge/cvm-action@v1
+      - uses: lucasaarch/cvm-action@v1
         with:
           dry-run: 'true'
           create-pr: 'false'
@@ -171,7 +171,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: blitzforge/cvm-action@v1
+      - uses: lucasaarch/cvm-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -184,7 +184,7 @@ jobs:
 Customize the pull request title and labels:
 
 ```yaml
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
@@ -197,7 +197,7 @@ Customize the pull request title and labels:
 Apply changes and commit directly (use with caution):
 
 ```yaml
-- uses: blitzforge/cvm-action@v1
+- uses: lucasaarch/cvm-action@v1
   with:
     create-pr: 'false'
 
@@ -216,7 +216,7 @@ Block merges if there are unapplied version changes:
 
 ```yaml
 - name: Check for pending changes
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'status'
     create-pr: 'false'
@@ -249,7 +249,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Publish
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'publish'
         env:
@@ -263,7 +263,7 @@ Preview what would be published without actually publishing:
 
 ```yaml
 - name: Preview publish
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
     dry-run: 'true'
@@ -278,7 +278,7 @@ Create tags and publish to crates.io, but skip GitHub releases:
 
 ```yaml
 - name: Publish (no releases)
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
     publish-no-release: 'true'
@@ -293,7 +293,7 @@ Publish to crates.io without creating Git tags or GitHub releases:
 
 ```yaml
 - name: Publish to crates.io only
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
     publish-no-tag: 'true'
@@ -308,7 +308,7 @@ Allow publishing even with uncommitted changes (use with caution):
 
 ```yaml
 - name: Publish (allow dirty)
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
     publish-allow-dirty: 'true'
@@ -347,7 +347,7 @@ jobs:
       
       - name: Check and apply version changes
         id: cvm
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -369,7 +369,7 @@ jobs:
       
       - name: Publish crates
         id: publish
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'publish'
         env:
@@ -432,7 +432,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Publish to staging (no releases)
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'publish'
           publish-no-release: 'true'
@@ -448,7 +448,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Publish to production (full release)
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'publish'
         env:
@@ -463,7 +463,7 @@ Use the action outputs in subsequent steps:
 ```yaml
 - name: Check versions
   id: cvm
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -507,7 +507,7 @@ jobs:
       # Publish with releases on main
       - name: Publish (production)
         if: github.ref == 'refs/heads/main'
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'publish'
         env:
@@ -517,7 +517,7 @@ jobs:
       # Publish without releases on beta
       - name: Publish (beta)
         if: github.ref == 'refs/heads/beta'
-        uses: blitzforge/cvm-action@v1
+        uses: lucasaarch/cvm-action@v1
         with:
           command: 'publish'
           publish-no-release: 'true'
@@ -531,7 +531,7 @@ jobs:
 ```yaml
 - name: Check versions
   id: check
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'status'
     create-pr: 'false'
@@ -542,7 +542,7 @@ jobs:
 
 - name: Publish after tests pass
   if: steps.check.outputs.has-changes == 'false'
-  uses: blitzforge/cvm-action@v1
+  uses: lucasaarch/cvm-action@v1
   with:
     command: 'publish'
   env:
