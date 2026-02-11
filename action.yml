@@ -72,7 +72,12 @@ runs:
       run: |
         if ! command -v cvm &> /dev/null; then
           echo "Installing CVM..."
+          # Install in a temporary directory to avoid modifying project's Cargo.lock
+          TEMP_DIR=$(mktemp -d)
+          cd "$TEMP_DIR"
           cargo install cvm_cli
+          cd -
+          rm -rf "$TEMP_DIR"
         else
           echo "CVM already installed"
         fi
