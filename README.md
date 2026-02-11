@@ -30,24 +30,20 @@ jobs:
 - 📦 Staged version changes via `.cvm/changes/` files
 - ⚡ CI-friendly with status checks and dry-run mode
 - 🤖 Automatic PR creation with version bumps
+- 🚀 Automated publishing to crates.io with tags and GitHub releases
 - ✅ Preserves Cargo.toml formatting
 
-## 📋 CI Pipeline Example
+## 📋 Complete CI/CD Pipeline Example
 
-Here's a complete CI pipeline that checks for pending version changes and applies them automatically:
+Here's a complete CI/CD pipeline that checks for pending version changes, applies them, and publishes to crates.io:
 
 ```yaml
-name: Version Management
+name: Version Management & Publishing
 
 on:
-  # Run on changes to version files
-  pull_request:
-    paths:
-      - '.cvm/changes/**'
-  # Run weekly to apply accumulated changes
-  schedule:
-    - cron: '0 0 * * 1'  # Monday at midnight
-  # Allow manual trigger
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -56,6 +52,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      has-changes: ${{ steps.cvm.outputs.has-changes }}
     
     steps:
       - name: Checkout repository
@@ -69,18 +67,41 @@ jobs:
         with:
           pr-title: 'chore: apply version bumps'
           pr-labels: 'version-bump,automated'
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: check-and-apply
+    if: needs.check-and-apply.outputs.has-changes == 'false'
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-      - name: Summary
-        run: |
-          echo "Has pending changes: ${{ steps.cvm.outputs.has-changes }}"
-          echo "Changes applied: ${{ steps.cvm.outputs.applied }}"
+      - name: Publish crates
+        uses: blitzforge/cvm-action@v1
+        with:
+          command: 'publish'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 ```
 
-This pipeline will:
+**How this pipeline works:**
+
+### When there ARE pending changes:
 1. ✅ Check for pending version changes in `.cvm/changes/`
 2. 📝 Apply changes to `Cargo.toml` files
 3. 🔀 Create a pull request with the version bumps
 4. 🗑️ Remove applied change files
+5. ⏸️ Skip publish step
+
+### After merging the PR (no pending changes):
+1. ✅ No pending changes detected
+2. 🏷️ Create Git tags (e.g., `v1.2.3` or `crate-name-v1.2.3`)
+3. 📦 Create GitHub releases
+4. 🚀 Publish to crates.io
 
 ## 📖 How It Works
 
@@ -144,6 +165,51 @@ Check for pending changes without applying:
   run: exit 1
 ```
 
+### Publish to crates.io
+
+Publish crates with tags and GitHub releases:
+
+```yaml
+- name: Publish crates
+  uses: blitzforge/cvm-action@v1
+  with:
+    command: 'publish'
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+```
+
+### Publish with Custom Options
+
+```yaml
+# Publish without creating GitHub releases
+- uses: blitzforge/cvm-action@v1
+  with:
+    command: 'publish'
+    publish-no-release: 'true'
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+# Publish without creating Git tags (only crates.io)
+- uses: blitzforge/cvm-action@v1
+  with:
+    command: 'publish'
+    publish-no-tag: 'true'
+    publish-no-release: 'true'
+  env:
+    CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+# Dry-run publish (preview what would be published)
+- uses: blitzforge/cvm-action@v1
+  with:
+    command: 'publish'
+    dry-run: 'true'
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+```
+
 ### Custom PR Configuration
 
 ```yaml
@@ -176,6 +242,9 @@ Then commit manually in a subsequent step.
 | `create-pr` | Create a pull request with version changes | `true` |
 | `pr-title` | Title for the pull request | `chore: apply version bumps` |
 | `pr-labels` | Comma-separated labels for the PR | `version-bump,automated` |
+| `publish-no-tag` | Skip creating Git tags when publishing | `false` |
+| `publish-no-release` | Skip creating GitHub releases when publishing | `false` |
+| `publish-allow-dirty` | Allow publishing with uncommitted changes | `false` |
 
 ## 📤 Outputs
 
@@ -183,6 +252,9 @@ Then commit manually in a subsequent step.
 |--------|-------------|
 | `has-changes` | Whether there are pending version changes (`true`/`false`) |
 | `applied` | Whether changes were applied (`true`/`false`) |
+| `published` | Whether crates were published (`true`/`false`) |
+| `version` | Version that was published (for single crate projects) |
+| `crates` | JSON array of published crates with versions |
 
 ## 📁 Change File Format
 
@@ -236,7 +308,7 @@ Check the [examples/](examples/) directory for:
 
 ## 🔒 Permissions
 
-The action requires these permissions to create PRs:
+### For applying version changes (creating PRs):
 
 ```yaml
 permissions:
@@ -244,13 +316,28 @@ permissions:
   pull-requests: write
 ```
 
-Set the `GITHUB_TOKEN` environment variable:
+### For publishing to crates.io:
 
 ```yaml
-- uses: blitzforge/cvm-action@v1
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+permissions:
+  contents: write  # Required for creating tags and releases
 ```
+
+### Environment Variables
+
+**For creating PRs and GitHub releases:**
+```yaml
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**For publishing to crates.io:**
+```yaml
+env:
+  CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+```
+
+Get your crates.io token from [crates.io/me](https://crates.io/me) and add it to your repository secrets.
 
 ## 🤝 Related Projects
 
