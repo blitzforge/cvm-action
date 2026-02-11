@@ -167,17 +167,17 @@ runs:
 
         echo "Running: $PUBLISH_CMD"
 
-        # Run publish and capture output
-        OUTPUT=$($PUBLISH_CMD 2>&1)
-        EXIT_CODE=$?
-
-        echo "$OUTPUT"
+        # Run publish with output streaming to console, and save to file for JSON extraction
+        set +e  # Temporarily disable exit on error
+        $PUBLISH_CMD 2>&1 | tee /tmp/cvm_output.txt
+        EXIT_CODE=${PIPESTATUS[0]}
+        set -e  # Re-enable exit on error
 
         if [ $EXIT_CODE -eq 0 ]; then
           echo "published=true" >> $GITHUB_OUTPUT
 
           # Extract JSON output from CVM
-          JSON_OUTPUT=$(echo "$OUTPUT" | grep "::cvm-output-json::" | sed 's/.*::cvm-output-json:://')
+          JSON_OUTPUT=$(grep "::cvm-output-json::" /tmp/cvm_output.txt | sed 's/.*::cvm-output-json:://')
 
           if [ -n "$JSON_OUTPUT" ]; then
             echo "crates=$JSON_OUTPUT" >> $GITHUB_OUTPUT
