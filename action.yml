@@ -142,6 +142,9 @@ runs:
 
         echo "Running: $PUBLISH_CMD"
 
+        git config --global user.name "GitHub"
+        git config --global user.email "noreply@github.com"
+
         # Run publish and capture output
         if $PUBLISH_CMD; then
           echo "published=true" >> $GITHUB_OUTPUT
